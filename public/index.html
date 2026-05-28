@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitoxy</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-primary: #313338;
+            --bg-secondary: #2b2d31;
+            --bg-tertiary: #1e1f22;
+            --bg-input: #1e1f22;
+            --bg-hover: #35373c;
+            --bg-tab: #2b2d31;
+            --bg-tab-active: #313338;
+            --accent: #5865f2;
+            --accent-hover: #4752c4;
+            --accent-green: #23a55a;
+            --accent-red: #f23f42;
+            --accent-yellow: #f0b232;
+            --text-primary: #f2f3f5;
+            --text-secondary: #b5bac1;
+            --text-muted: #80848e;
+            --border: #3f4147;
+        }
+
+        body {
+            font-family: 'gg Sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ── Tab Bar ── */
+        .tab-bar {
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: flex-end;
+            padding: 6px 8px 0;
+            gap: 2px;
+            min-height: 38px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            flex-shrink: 0;
+        }
+
+        .tab-bar::-webkit-scrollbar { height: 3px; }
+        .tab-bar::-webkit-scrollbar-track { background: transparent; }
+        .tab-bar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        .tab {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: var(--bg-tab);
+            border: 1px solid transparent;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            min-width: 100px;
+            max-width: 180px;
+            flex-shrink: 0;
+            transition: background 0.1s;
+            position: relative;
+            top: 1px;
+        }
+
+        .tab:hover { background: var(--bg-hover); }
+
+        .tab.active {
+            background: var(--bg-tab-active);
+            border-color: var(--border);
+            border-bottom-color: var(--bg-tab-active);
+        }
+
+        .tab-favicon {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
+            border-radius: 2px;
+            object-fit: contain;
+        }
+
+        .tab-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .tab.active .tab-title { color: var(--text-primary); }
+
+        .tab-close {
+            width: 16px;
+            height: 16px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--text-muted);
+            transition: background 0.1s, color 0.1s;
+        }
+
+        .tab-close:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+
+        .new-tab-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 4px;
+            border: none;
+            background: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: background 0.1s, color 0.1s;
+            margin-bottom: 2px;
+        }
+
+        .new-tab-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+
+        /* ── Header / Toolbar ── */
+        .header {
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border);
+            padding: 0 12px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            flex-shrink: 0;
+        }
+
+        .logo svg { width: 22px; height: 22px; }
+
+        .logo-text {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.3px;
+        }
+
+        .vr {
+            width: 1px;
+            height: 18px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        .nav-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.1s, color 0.1s;
+            flex-shrink: 0;
+        }
+
+        .nav-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .url-bar {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 0 10px;
+            gap: 8px;
+            height: 30px;
+            transition: border-color 0.15s;
+        }
+
+        .url-bar:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(88,101,242,0.2);
+        }
+
+        .url-icon { color: var(--text-muted); flex-shrink: 0; display: flex; align-items: center; }
+
+        .url-input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            min-width: 0;
+        }
+
+        .url-input::placeholder { color: var(--text-muted); }
+
+        .go-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 3px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+            flex-shrink: 0;
+            height: 22px;
+            display: flex;
+            align-items: center;
+        }
+
+        .go-btn:hover { background: var(--accent-hover); }
+
+        .status-chip {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 9px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+        .status-ready   { background: rgba(35,165,90,0.15);  color: var(--accent-green); }
+        .status-loading { background: rgba(240,178,50,0.15); color: var(--accent-yellow); }
+        .status-error   { background: rgba(242,63,66,0.15);  color: var(--accent-red); }
+        .status-ready   .status-dot { background: var(--accent-green); }
+        .status-loading .status-dot { background: var(--accent-yellow); animation: pulse 1s infinite; }
+        .status-error   .status-dot { background: var(--accent-red); }
+
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        /* ── Content area ── */
+        .content {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-secondary);
+        }
+
+        .tab-content {
+            position: absolute;
+            inset: 0;
+            display: none;
+        }
+
+        .tab-content.active { display: flex; flex-direction: column; }
+
+        iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        iframe.loaded { opacity: 1; }
+
+        /* ── New tab page ── */
+        .newtab-page {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+            padding: 40px 20px;
+            background: var(--bg-secondary);
+        }
+
+        .newtab-greeting {
+            text-align: center;
+        }
+
+        .newtab-greeting h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .newtab-greeting p {
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .newtab-search {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .newtab-search-bar {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 0 14px;
+            gap: 10px;
+            height: 42px;
+            transition: border-color 0.15s;
+        }
+
+        .newtab-search-bar:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(88,101,242,0.2);
+        }
+
+        .newtab-search-bar input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .newtab-search-bar input::placeholder { color: var(--text-muted); }
+
+        .newtab-go {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s;
+            height: 42px;
+        }
+
+        .newtab-go:hover { background: var(--accent-hover); }
+
+        /* ── Quick links grid ── */
+        .quicklinks {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+            width: 100%;
+            max-width: 560px;
+        }
+
+        .quicklink {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 8px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s, transform 0.1s;
+            text-decoration: none;
+        }
+
+        .quicklink:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .quicklink-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .quicklink-label {
+            font-size: 11px;
+            color: var(--text-secondary);
+            text-align: center;
+            font-weight: 500;
+        }
+
+        /* ── Overlays ── */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 14px;
+            background: var(--bg-secondary);
+            z-index: 2;
+        }
+
+        .overlay.active { display: flex; }
+
+        .spinner {
+            width: 36px;
+            height: 36px;
+            border: 3px solid rgba(255,255,255,0.08);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .spinner-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .error-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(242,63,66,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-red);
+        }
+
+        .error-title { font-size: 15px; font-weight: 700; }
+
+        .error-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            max-width: 300px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .retry-btn {
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 7px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+
+        .retry-btn:hover { background: var(--accent-hover); }
+
+        /* ── Footer ── */
+        .footer {
+            background: var(--bg-tertiary);
+            border-top: 1px solid var(--border);
+            height: 20px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .footer-brand { font-size: 10px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.5px; flex-shrink: 0; }
+
+        .footer-url {
+            flex: 1;
+            font-size: 10px;
+            color: var(--text-muted);
+            font-family: 'JetBrains Mono', monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Tab Bar -->
+<div class="tab-bar" id="tabBar">
+    <!-- tabs injected here -->
+    <button class="new-tab-btn" id="newTabBtn" title="New tab">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+    </button>
+</div>
+
+<!-- Toolbar -->
+<div class="header">
+    <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="12" cy="12" r="10" fill="#5865f2" opacity="0.15"/>
+            <path d="M8 6.5C9.5 5.5 11 5 12 5s3 .7 4.5 2L18 8.5C16.5 7 14.5 6 12 6S7.5 7 6 8.5L8 6.5z" fill="#5865f2"/>
+            <circle cx="9" cy="12" r="2" fill="#5865f2"/>
+            <circle cx="15" cy="12" r="2" fill="#5865f2"/>
+            <path d="M9 16s1 1.5 3 1.5 3-1.5 3-1.5" stroke="#5865f2" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+        </svg>
+        <span class="logo-text">Kitoxy</span>
+    </div>
+    <div class="vr"></div>
+    <button class="nav-btn" id="backBtn" title="Back" disabled>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="nav-btn" id="fwdBtn" title="Forward" disabled>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+    <button class="nav-btn" id="reloadBtn" title="Reload">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+    </button>
+    <div class="url-bar">
+        <div class="url-icon">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </div>
+        <input class="url-input" id="urlInput" type="text" placeholder="Search or enter URL…" autocomplete="off" spellcheck="false"/>
+        <button class="go-btn" id="goBtn">Go</button>
+    </div>
+    <div class="status-chip status-ready" id="statusChip">
+        <div class="status-dot"></div>
+        <span id="statusText">Ready</span>
+    </div>
+</div>
+
+<!-- Content -->
+<div class="content" id="contentArea"></div>
+
+<!-- Footer -->
+<div class="footer">
+    <span class="footer-brand">KITOXY</span>
+    <span class="footer-url" id="footerUrl">New Tab</span>
+</div>
+
+<script>
+// ── Quick links shown on new tab page ──
+const QUICK_LINKS = [
+    { label: 'Google',    url: 'https://www.google.com',     emoji: '🔍' },
+    { label: 'YouTube',   url: 'https://www.youtube.com',    emoji: '▶️' },
+    { label: 'Reddit',    url: 'https://www.reddit.com',     emoji: '🤖' },
+    { label: 'GitHub',    url: 'https://www.github.com',     emoji: '🐙' },
+    { label: 'Twitter',   url: 'https://www.twitter.com',    emoji: '🐦' },
+    { label: 'Wikipedia', url: 'https://www.wikipedia.org',  emoji: '📖' },
+    { label: 'Gmail',     url: 'https://mail.google.com',    emoji: '✉️' },
+    { label: 'Twitch',    url: 'https://www.twitch.tv',      emoji: '🎮' },
+    { label: 'Netflix',   url: 'https://www.netflix.com',    emoji: '🎬' },
+    { label: 'Spotify',   url: 'https://open.spotify.com',   emoji: '🎵' },
+];
+
+// ── State ──
+let tabs = [];
+let activeTabId = null;
+let nextTabId = 1;
+
+const tabBar      = document.getElementById('tabBar');
+const newTabBtn   = document.getElementById('newTabBtn');
+const contentArea = document.getElementById('contentArea');
+const urlInput    = document.getElementById('urlInput');
+const goBtn       = document.getElementById('goBtn');
+const backBtn     = document.getElementById('backBtn');
+const fwdBtn      = document.getElementById('fwdBtn');
+const reloadBtn   = document.getElementById('reloadBtn');
+const statusChip  = document.getElementById('statusChip');
+const statusText  = document.getElementById('statusText');
+const footerUrl   = document.getElementById('footerUrl');
+
+// ── Helpers ──
+function setStatus(state, text) {
+    statusChip.className = 'status-chip status-' + state;
+    statusText.textContent = text;
+}
+
+function normalizeUrl(raw) {
+    raw = raw.trim();
+    if (!raw) return null;
+    if (/^https?:\/\//i.test(raw)) {
+        try { new URL(raw); return raw; } catch {}
+    }
+    const domainLike = /^([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/.test(raw);
+    if (domainLike) {
+        const url = 'https://' + raw;
+        try { new URL(url); return url; } catch {}
+    }
+    return 'https://www.google.com/search?q=' + encodeURIComponent(raw);
+}
+
+function getTab(id) { return tabs.find(t => t.id === id); }
+
+function activeTab() { return getTab(activeTabId); }
+
+// ── Tab DOM ──
+function renderTabBar() {
+    // Remove all tabs (keep new-tab button)
+    tabBar.querySelectorAll('.tab').forEach(el => el.remove());
+
+    tabs.forEach(tab => {
+        const el = document.createElement('div');
+        el.className = 'tab' + (tab.id === activeTabId ? ' active' : '');
+        el.dataset.id = tab.id;
+        el.innerHTML = `
+            <img class="tab-favicon" src="${tab.favicon}" onerror="this.style.display='none'">
+            <span class="tab-title">${tab.title}</span>
+            <div class="tab-close" data-close="${tab.id}">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </div>`;
+        el.addEventListener('click', e => {
+            if (e.target.closest('[data-close]')) {
+                closeTab(tab.id);
+            } else {
+                switchTab(tab.id);
+            }
+        });
+        tabBar.insertBefore(el, newTabBtn);
+    });
+}
+
+// ── New tab page ──
+function buildNewTabPage(tabId) {
+    const page = document.createElement('div');
+    page.className = 'tab-content newtab-wrapper active';
+    page.dataset.tabId = tabId;
+
+    const inner = document.createElement('div');
+    inner.className = 'newtab-page';
+
+    const now = new Date();
+    const hour = now.getHours();
+    const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+
+    inner.innerHTML = `
+        <div class="newtab-greeting">
+            <h1>${greeting}</h1>
+            <p>Where would you like to go today?</p>
+        </div>
+        <div class="newtab-search">
+            <div class="newtab-search-bar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Search Google or enter a URL…" id="ntSearch_${tabId}" autocomplete="off" spellcheck="false"/>
+            </div>
+            <button class="newtab-go" id="ntGo_${tabId}">Go</button>
+        </div>
+        <div class="quicklinks">
+            ${QUICK_LINKS.map(l => `
+                <div class="quicklink" data-url="${l.url}">
+                    <div class="quicklink-icon">${l.emoji}</div>
+                    <div class="quicklink-label">${l.label}</div>
+                </div>`).join('')}
+        </div>`;
+
+    page.appendChild(inner);
+
+    // Events
+    const ntInput = inner.querySelector(`#ntSearch_${tabId}`);
+    const ntGo    = inner.querySelector(`#ntGo_${tabId}`);
+
+    const doSearch = () => {
+        const url = normalizeUrl(ntInput.value);
+        if (url) navigateTab(tabId, url);
+    };
+
+    ntGo.addEventListener('click', doSearch);
+    ntInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+    inner.querySelectorAll('.quicklink').forEach(el => {
+        el.addEventListener('click', () => navigateTab(tabId, el.dataset.url));
+    });
+
+    return page;
+}
+
+// ── Create tab ──
+function createTab(url = null) {
+    const id = nextTabId++;
+    const tab = {
+        id,
+        title: 'New Tab',
+        favicon: '',
+        url: null,
+        history: [],
+        historyIndex: -1,
+        loadTimeout: null,
+    };
+    tabs.push(tab);
+
+    // Build content wrapper
+    const wrapper = document.createElement('div');
+    wrapper.className = 'tab-content';
+    wrapper.dataset.tabId = id;
+
+    const newTabPage = buildNewTabPage(id);
+    newTabPage.className = 'newtab-page-wrap';
+    newTabPage.style.cssText = 'flex:1;display:flex;flex-direction:column;';
+
+    // Overlays
+    const spinnerOverlay = document.createElement('div');
+    spinnerOverlay.className = 'overlay';
+    spinnerOverlay.id = `spinner_${id}`;
+    spinnerOverlay.innerHTML = `<div class="spinner"></div><div class="spinner-label" id="spinnerLbl_${id}">Connecting…</div>`;
+
+    const errorOverlay = document.createElement('div');
+    errorOverlay.className = 'overlay';
+    errorOverlay.id = `error_${id}`;
+    errorOverlay.innerHTML = `
+        <div class="error-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div class="error-title">Failed to load</div>
+        <div class="error-desc" id="errorDesc_${id}">Could not connect. Check the URL or proxy.</div>
+        <button class="retry-btn" id="retryBtn_${id}">Try Again</button>`;
+
+    const frame = document.createElement('iframe');
+    frame.id = `frame_${id}`;
+    frame.style.cssText = 'flex:1;width:100%;border:none;display:none;opacity:0;transition:opacity 0.2s;';
+
+    wrapper.appendChild(newTabPage);
+    wrapper.appendChild(spinnerOverlay);
+    wrapper.appendChild(errorOverlay);
+    wrapper.appendChild(frame);
+    contentArea.appendChild(wrapper);
+
+    // Frame events
+    frame.addEventListener('load', () => {
+        const t = getTab(id);
+        if (!t || !t.url) return;
+        clearTimeout(t.loadTimeout);
+        spinnerOverlay.classList.remove('active');
+        frame.style.opacity = '1';
+        frame.style.display = 'block';
+        if (id === activeTabId) setStatus('ready', 'Connected');
+    });
+
+    document.getElementById(`retryBtn_${id}`).addEventListener('click', () => {
+        const t = getTab(id);
+        if (t && t.url) navigateTab(id, t.url, false);
+    });
+
+    switchTab(id);
+    if (url) navigateTab(id, url);
+
+    return id;
+}
+
+// ── Switch tab ──
+function switchTab(id) {
+    activeTabId = id;
+
+    // Show/hide content
+    contentArea.querySelectorAll('.tab-content').forEach(el => {
+        el.classList.toggle('active', el.dataset.tabId == id);
+    });
+
+    renderTabBar();
+
+    const tab = getTab(id);
+    if (tab) {
+        urlInput.value = tab.url || '';
+        footerUrl.textContent = tab.url || 'New Tab';
+        backBtn.disabled = tab.historyIndex <= 0;
+        fwdBtn.disabled  = tab.historyIndex >= tab.history.length - 1;
+        if (!tab.url) {
+            setStatus('ready', 'Ready');
+        }
+    }
+}
+
+// ── Close tab ──
+function closeTab(id) {
+    const idx = tabs.findIndex(t => t.id === id);
+    if (idx === -1) return;
+
+    // Remove DOM
+    const wrapper = contentArea.querySelector(`[data-tab-id="${id}"]`);
+    if (wrapper) wrapper.remove();
+
+    tabs.splice(idx, 1);
+
+    if (tabs.length === 0) {
+        createTab();
+    } else if (activeTabId === id) {
+        const newActive = tabs[Math.min(idx, tabs.length - 1)].id;
+        switchTab(newActive);
+    } else {
+        renderTabBar();
+    }
+}
+
+// ── Navigate ──
+function navigateTab(id, url, push = true) {
+    const tab = getTab(id);
+    if (!tab) return;
+
+    tab.url = url;
+    if (id === activeTabId) {
+        urlInput.value = url;
+        footerUrl.textContent = url;
+    }
+
+    // Update tab title
+    try {
+        const hostname = new URL(url).hostname.replace('www.', '');
+        tab.title = hostname;
+        tab.favicon = `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`;
+    } catch {
+        tab.title = url.substring(0, 20);
+        tab.favicon = '';
+    }
+
+    renderTabBar();
+
+    // Show spinner, hide others
+    const wrapper   = contentArea.querySelector(`[data-tab-id="${id}"]`);
+    const frame     = document.getElementById(`frame_${id}`);
+    const spinner   = document.getElementById(`spinner_${id}`);
+    const error     = document.getElementById(`error_${id}`);
+    const lbl       = document.getElementById(`spinnerLbl_${id}`);
+    const newTabPg  = wrapper.querySelector('.newtab-page-wrap');
+
+    if (newTabPg) newTabPg.style.display = 'none';
+    error.classList.remove('active');
+    frame.style.display = 'none';
+    frame.style.opacity = '0';
+    spinner.classList.add('active');
+
+    try { lbl.textContent = 'Connecting to ' + new URL(url).hostname + '…'; } catch {}
+
+    if (id === activeTabId) setStatus('loading', 'Loading…');
+
+    clearTimeout(tab.loadTimeout);
+    tab.loadTimeout = setTimeout(() => {
+        spinner.classList.remove('active');
+        error.classList.add('active');
+        document.getElementById(`errorDesc_${id}`).textContent = 'Connection timed out. The site may be blocking proxied requests.';
+        if (id === activeTabId) setStatus('error', 'Timeout');
+    }, 15000);
+
+    frame.src = `/proxy?url=${encodeURIComponent(url)}`;
+
+    if (push) {
+        tab.history = tab.history.slice(0, tab.historyIndex + 1);
+        tab.history.push(url);
+        tab.historyIndex = tab.history.length - 1;
+    }
+
+    if (id === activeTabId) {
+        backBtn.disabled = tab.historyIndex <= 0;
+        fwdBtn.disabled  = tab.historyIndex >= tab.history.length - 1;
+    }
+}
+
+// ── Toolbar events ──
+goBtn.addEventListener('click', () => {
+    const url = normalizeUrl(urlInput.value);
+    if (url) navigateTab(activeTabId, url);
+});
+
+urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') goBtn.click(); });
+
+backBtn.addEventListener('click', () => {
+    const tab = activeTab();
+    if (tab && tab.historyIndex > 0) {
+        tab.historyIndex--;
+        navigateTab(tab.id, tab.history[tab.historyIndex], false);
+    }
+});
+
+fwdBtn.addEventListener('click', () => {
+    const tab = activeTab();
+    if (tab && tab.historyIndex < tab.history.length - 1) {
+        tab.historyIndex++;
+        navigateTab(tab.id, tab.history[tab.historyIndex], false);
+    }
+});
+
+reloadBtn.addEventListener('click', () => {
+    const tab = activeTab();
+    if (tab && tab.url) navigateTab(tab.id, tab.url, false);
+});
+
+newTabBtn.addEventListener('click', () => createTab());
+
+// ── Init ──
+createTab();
+</script>
+</body>
+</html>
